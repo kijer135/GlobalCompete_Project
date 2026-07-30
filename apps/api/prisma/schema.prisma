@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum ScoreDirection {
+  HIGHER_IS_BETTER
+  LOWER_IS_BETTER
+}
+
+model User {
+  id           String            @id @default(cuid())
+  email        String            @unique
+  passwordHash String
+  nickname     String            @unique
+  imageUrl     String?
+  role         Role              @default(USER)
+  createdAt    DateTime          @default(now())
+  lastLoginAt  DateTime?
+  loginStreak  Int               @default(0)
+  results      TestResult[]
+  achievements UserAchievement[]
+}
+
+model Test {
+  id             String         @id
+  name           String
+  description    String
+  unit           String
+  scoreDirection ScoreDirection
+  isActive       Boolean        @default(true)
+  sortOrder      Int            @default(0)
+  results        TestResult[]
+}
+
+model TestResult {
+  id        String   @id @default(cuid())
+  userId    String
+  testId    String
+  score     Float
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  test      Test     @relation(fields: [testId], references: [id])
+
+  @@index([testId, createdAt])
+  @@index([userId, testId])
+}
+
+model Achievement {
+  id          String            @id
+  name        String
+  description String
+  icon        String
+  users       UserAchievement[]
+}
+
+model UserAchievement {
+  userId        String
+  achievementId String
+  unlockedAt    DateTime    @default(now())
+  user          User        @relation(fields: [userId], references: [id])
+  achievement   Achievement @relation(fields: [achievementId], references: [id])
+
+  @@id([userId, achievementId])
+}
+
+model Notice {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+}
